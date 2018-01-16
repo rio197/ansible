@@ -1,0 +1,11 @@
+---
+   - hosts: database
+     become: true
+     tasks:
+       - name: ensure mysql is listening to 127.0.0.1
+         lineinfile: dest=/etc/my.cnf line="bind-address = 127.0.0.1" insertafter='^\[mysqld\]' state=present
+         notify: restart mysqld
+
+     handlers:
+       - name: restart mysqld
+         service: name=mysqld state=restarted 

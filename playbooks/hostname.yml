@@ -1,0 +1,5 @@
+# test123
+---
+   - hosts: all
+     tasks:
+      - command: hostname

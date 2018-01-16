@@ -1,0 +1,49 @@
+---
+  - hosts: webserver
+    become: true
+    tasks: 
+      - name: install web components
+        yum: name={{item}} state=present update_cache=yes
+        with_items:
+          - httpd
+          - mod_wsgi
+          - python-pip
+          - python-virtualenv
+          - MySQL-python
+
+      - name: ensure the sites-* directory exist
+        file: path={{item}} state=directory mode=0755
+        with_items:
+        - /etc/httpd/sites-available
+        - /etc/httpd/sites-enabled
+
+      - name: ensure httpd started
+        service: name=httpd state=started enabled=yes
+
+      - name: ensure mod_wsgi enabled
+        apache2_module: state=present name=wsgi
+        notify: restart apache2
+
+      - name: copy demo app source
+        copy: src=../demo/app/ dest=/var/www/demo mode=0755
+        notify: restart apache2
+
+      - name: copy apache virtual host config
+        copy: src=../demo/demo.conf dest=/etc/httpd/sites-available/ mode=0755
+        notify: restart apache2
+
+      - name: setup python virtualenv
+        pip: requirements=/var/www/demo/requirements.txt virtualenv=/var/www/demo/.venv
+        notify: restart apache2
+
+      - name: de-activate default apache site
+        file: path=/etc/httpd/sites-enabled/000-default.conf state=absent
+        notify: restart apache2
+
+      - name: activate demo apache site
+        file: src=/etc/httpd/sites-available/demo.conf dest=/etc/httpd/sites-enabled/demo.conf state=link
+        notify: restart apache2
+
+    handlers:
+      - name: restart apache2 
+        service: name=httpd state=restarted

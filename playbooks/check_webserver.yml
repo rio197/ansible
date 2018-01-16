@@ -1,0 +1,9 @@
+--- 
+  - hosts: webserver
+    become: true
+    tasks:
+       - name: check if sites-* directory exist
+         file: path={{item}} state=directory mode=0755
+         with_items:
+         - /etc/httpd/sites-available
+         - /etc/httpd/sites-enabled
